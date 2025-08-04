@@ -11,8 +11,8 @@ def fetch_data(data: Colleges):
         CA.aggr_mark, CA.general_rank, CA.community_rank, CA.community,
         CA.college_code, CLG.college_name, B.branch_name,
         CA.allotted_category, CA.year, CA.round
-    ).join(CLG, CA.college_code == CLG.college_code
-    ).join(B, CA.branch_code == B.branch_code)
+    ).outerjoin(CLG, CA.college_code == CLG.college_code
+    ).outerjoin(B, CA.branch_code == B.branch_code)
 
     if data.Year:
         query = query.filter(CA.year.in_(data.Year))
@@ -40,7 +40,6 @@ def fetch_data(data: Colleges):
             query = query.filter(CA.aggr_mark == data.FirstValue[0])
 
     results = query.order_by(CA.year.desc(), CA.aggr_mark.desc()).all()
-    print(query)
 
     return [{
         "year": r.year,
