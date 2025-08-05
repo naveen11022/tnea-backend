@@ -2,7 +2,8 @@ from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-engine = create_engine("mysql+pymysql://root:mysql123@localhost:3306/tnea")
+# engine = create_engine("mysql+pymysql://root:mysql123@localhost:3306/tnea")
+engine = create_engine("mysql+pymysql://root:M3ER8MfzddLDjPdf@161.97.142.217:13306/tnea")
 Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
