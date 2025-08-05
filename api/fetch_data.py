@@ -1,13 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 from models.models import Colleges
-from database.db_connection import session, CandidateAllotment as CA, Colleges as CLG, Branch as B
+from database.db_connection import get_db, CandidateAllotment as CA, Colleges as CLG, Branch as B
 
 router = APIRouter()
 
-
 @router.post("/fetch_data")
-def fetch_data(data: Colleges):
-    query = session.query(
+def fetch_data(data: Colleges, db: Session = Depends(get_db)):
+    query = db.query(
         CA.aggr_mark, CA.general_rank, CA.community_rank, CA.community,
         CA.college_code, CLG.college_name, B.branch_name,
         CA.allotted_category, CA.year, CA.round
@@ -27,7 +27,6 @@ def fetch_data(data: Colleges):
         value = data.Cutoff[0]
         if value == "between":
             query = query.filter(CA.aggr_mark.between(data.FirstValue[0], data.SecondValue[0]))
-
         elif value == ">":
             query = query.filter(CA.aggr_mark > data.FirstValue[0])
         elif value == "<":
@@ -41,15 +40,18 @@ def fetch_data(data: Colleges):
 
     results = query.order_by(CA.year.desc(), CA.aggr_mark.desc()).all()
 
-    return [{
-        "year": r.year,
-        "aggr_mark": r.aggr_mark,
-        "community": r.community,
-        "college_code": r.college_code,
-        "college_name": r.college_name,
-        "branch_name": r.branch_name,
-        "general_rank": r.general_rank,
-        "community_rank": r.community_rank,
-        "round": r.round,
-        "allotted_category": r.allotted_category
-    } for r in results]
+    return [
+        {
+            "year": r.year,
+            "aggr_mark": r.aggr_mark,
+            "community": r.community,
+            "college_code": r.college_code,
+            "college_name": r.college_name,
+            "branch_name": r.branch_name,
+            "general_rank": r.general_rank,
+            "community_rank": r.community_rank,
+            "round": r.round,
+            "allotted_category": r.allotted_category,
+        }
+        for r in results
+    ]

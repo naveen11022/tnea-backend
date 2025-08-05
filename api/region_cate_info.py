@@ -1,30 +1,25 @@
-from fastapi import APIRouter
-from database.db_connection import session, Colleges, CandidateAllotment
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from database.db_connection import get_db, Colleges, CandidateAllotment
 
 router = APIRouter()
 
 
 @router.get('/get_region', tags=['Region'])
-async def get_region():
+async def get_region(db: Session = Depends(get_db)):
     try:
-        regions = session.query(Colleges.region).distinct().all()
-        results = []
-        for region in regions:
-            results.append(region[0])
-        return results
+        regions = db.query(Colleges.region).distinct().all()
+        return [region[0] for region in regions]
     except Exception as e:
         print("Error:", e)
         return {"error": str(e)}
 
 
 @router.get('/get_category', tags=['Category'])
-async def get_category():
+async def get_category(db: Session = Depends(get_db)):
     try:
-        categories = session.query(CandidateAllotment.community).distinct().all()
-        result = []
-        for category in categories:
-            result.append(category[0])
-        return result
+        categories = db.query(CandidateAllotment.community).distinct().all()
+        return [category[0] for category in categories]
     except Exception as e:
         print("Error:", e)
         return {"error": str(e)}

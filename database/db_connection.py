@@ -1,12 +1,25 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 
-# engine = create_engine("mysql+pymysql://root:mysql123@localhost:3306/tnea")
-engine = create_engine("mysql+pymysql://tnea_admin:M3ER8MfzddLDjPdf@161.97.142.217:13306/tnea")
-Session = sessionmaker(bind=engine)
-session = Session()
+DATABASE_URL = "mysql+pymysql://root:mysql123@localhost:3306/tnea"
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+
+def get_db():
+    db: Session = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 class CandidateAllotment(Base):
