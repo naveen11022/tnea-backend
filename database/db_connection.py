@@ -1,55 +1,41 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
+from mongoengine import connect, Document, IntField, StringField, FloatField
 
-engine = create_engine("mysql+pymysql://tnea_admin:M3ER8MfzddLDjPdf@161.97.142.217:13306/tnea")
+connect('tnea', host='127.0.0.1', port=27017)
 
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+class Allotment(Document):
+    s_no = IntField(null=True)
+    aggr_mark = FloatField()
+    general_rank = StringField(max_length=10)
+    community_rank = StringField(max_length=10)
+    community = StringField(max_length=50)
+    college_code = StringField(max_length=10)
+    branch_code = StringField(max_length=10)
+    allotted_category = StringField(max_length=50)
+    year = IntField()
+    round = StringField(max_length=10)
+
+    meta = {
+        'collection': 'allotment'
+    }
 
 
-def get_db():
-    db: Session = SessionLocal()
-    try:
-        yield db
-        db.commit()
-    except:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+class Branch(Document):
+    branch_code = StringField(max_length=10, null=True)
+    branch_name = StringField(max_length=300, null=True)
+
+    meta = {
+        'collection': 'branch'
+    }
 
 
-class CandidateAllotment(Base):
-    __tablename__ = 'candidate_allotment'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    s_no = Column(Integer, nullable=True)
-    aggr_mark = Column(Float)
-    general_rank = Column(String(10))
-    community_rank = Column(String(10))
-    community = Column(String(50))
-    college_code = Column(String(10))
-    branch_code = Column(String(10))
-    allotted_category = Column(String(50))
-    year = Column(Integer)
-    round = Column(String(10))
+class Colleges(Document):
+    s_no = IntField(null=True)
+    college_code = IntField(primary_key=True)
+    college_name = StringField(max_length=512, null=True)
+    location = StringField(max_length=512, null=True)
+    region = StringField(max_length=100, null=True)
 
-
-class Branch(Base):
-    __tablename__ = 'branch'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    branch_code = Column(String(10), nullable=True)
-    branch_name = Column(String(300), nullable=True)
-
-
-class Colleges(Base):
-    __tablename__ = 'colleges'
-    s_no = Column(Integer, nullable=True)
-    college_code = Column(Integer, primary_key=True)
-    college_name = Column(String(512), nullable=True)
-    location = Column(String(512), nullable=True)
-    region = Column(String(100), nullable=True)
-
-
-Base.metadata.create_all(engine)
+    meta = {
+        'collection': 'colleges'
+    }
