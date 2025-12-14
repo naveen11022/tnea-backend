@@ -10,3 +10,11 @@ class Colleges(BaseModel):
     Cutoff: Optional[List[str]] = []
     FirstValue: Optional[List[float]] = []
     SecondValue: Optional[List[float]] = []
+    Group: Optional[List[str]] = []
+    District: Optional[List[str]] = []
+    CollegeType:Optional[List[str]] = []
+
+
+class Regions(BaseModel):
+    District: Optional[List[str]]
+

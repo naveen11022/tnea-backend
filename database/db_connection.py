@@ -41,6 +41,7 @@ class Branch(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     branch_code = Column(String(10), nullable=True)
     branch_name = Column(String(300), nullable=True)
+    category = Column(String(50), nullable=True)
 
 
 class Colleges(Base):
@@ -50,6 +51,6 @@ class Colleges(Base):
     college_name = Column(String(512), nullable=True)
     location = Column(String(512), nullable=True)
     region = Column(String(100), nullable=True)
-
+    college_type = Column(String(100),nullable = True)
 
 Base.metadata.create_all(engine)

@@ -5,6 +5,7 @@ from database.db_connection import get_db, CandidateAllotment as CA, Colleges as
 
 router = APIRouter()
 
+
 @router.post("/fetch_data")
 def fetch_data(data: Colleges, db: Session = Depends(get_db)):
     query = db.query(
@@ -14,6 +15,8 @@ def fetch_data(data: Colleges, db: Session = Depends(get_db)):
     ).outerjoin(CLG, CA.college_code == CLG.college_code
     ).outerjoin(B, CA.branch_code == B.branch_code)
 
+    if data.Group:
+        query = query.filter(B.category.in_(data.Group))
     if data.Year:
         query = query.filter(CA.year.in_(data.Year))
     if data.Community:
@@ -22,6 +25,8 @@ def fetch_data(data: Colleges, db: Session = Depends(get_db)):
         query = query.filter(CA.branch_code.in_(data.Department))
     if data.Region:
         query = query.filter(CLG.region.in_(data.Region))
+    if data.District:
+        query = query.filter(CLG.location.in_(data.District))
 
     if data.Cutoff:
         value = data.Cutoff[0]
@@ -37,6 +42,9 @@ def fetch_data(data: Colleges, db: Session = Depends(get_db)):
             query = query.filter(CA.aggr_mark <= data.FirstValue[0])
         elif value == "=":
             query = query.filter(CA.aggr_mark == data.FirstValue[0])
+
+    if data.CollegeType:
+        query = query.filter(CLG.college_type.in_(data.CollegeType))
 
     results = query.order_by(CA.year.desc(), CA.aggr_mark.desc()).all()
 

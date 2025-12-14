@@ -4,6 +4,7 @@ from database.db_connection import get_db, Branch, CandidateAllotment
 
 router = APIRouter()
 
+
 @router.get('/get_branch', tags=['Branch'])
 async def get_branch(db: Session = Depends(get_db)):
     try:
@@ -12,6 +13,7 @@ async def get_branch(db: Session = Depends(get_db)):
         return results
     except Exception as e:
         return {"error": str(e)}
+
 
 @router.get('/get_year', tags=['Year'])
 async def get_year(db: Session = Depends(get_db)):

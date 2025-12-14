@@ -23,3 +23,4 @@ async def get_category(db: Session = Depends(get_db)):
     except Exception as e:
         print("Error:", e)
         return {"error": str(e)}
+
