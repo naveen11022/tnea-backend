@@ -13,9 +13,7 @@ def get_db():
     db: Session = SessionLocal()
     try:
         yield db
-        db.commit()
     except:
-        db.rollback()
         raise
     finally:
         db.close()
@@ -53,4 +51,3 @@ class Colleges(Base):
     region = Column(String(100), nullable=True)
     college_type = Column(String(100),nullable = True)
 
-Base.metadata.create_all(engine)
