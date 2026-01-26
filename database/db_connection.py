@@ -1,8 +1,10 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
-
-engine = create_engine("mysql+pymysql://tnea_admin:M3ER8MfzddLDjPdf@161.97.142.217:13306/tnea")
+load_dotenv()
+engine = create_engine(os.getenv('DATABASE_URL'))
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

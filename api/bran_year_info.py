@@ -30,7 +30,7 @@ async def get_year(db: Session = Depends(get_db)):
             return json.loads(cache_data)
         years = db.query(CandidateAllotment.year).distinct().order_by(CandidateAllotment.year.desc()).all()
         results = [year[0] for year in years]
-        redis_client.setex(cache_key,3600,json.dumps(results))
+        redis_client.setex(cache_key, 3600, json.dumps(results))
         return results
     except Exception as e:
         return {"error": str(e)}
