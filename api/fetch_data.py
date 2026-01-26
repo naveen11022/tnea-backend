@@ -1,19 +1,24 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from models.models import Colleges
 from database.db_connection import get_db, CandidateAllotment as CA, Colleges as CLG, Branch as B
+from rate_limit.rate_limiter import limiter
 
 router = APIRouter()
 
 
 @router.post("/fetch_data")
-def fetch_data(data: Colleges, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def fetch_data(request: Request, data: Colleges, db: Session = Depends(get_db)):
     query = db.query(
         CA.aggr_mark, CA.general_rank, CA.community_rank, CA.community,
         CA.college_code, CLG.college_name, B.branch_name,
         CA.allotted_category, CA.year, CA.round
-    ).outerjoin(CLG, CA.college_code == CLG.college_code
-    ).outerjoin(B, CA.branch_code == B.branch_code)
+    ).outerjoin(
+        CLG, CA.college_code == CLG.college_code
+    ).outerjoin(
+        B, CA.branch_code == B.branch_code
+    )
 
     if data.Group:
         query = query.filter(B.category.in_(data.Group))
