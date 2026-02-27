@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: mysql+pymysql://root:mysql123@host.docker.internal:3306/tnea
+       DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - redis
     restart: always

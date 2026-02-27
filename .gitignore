@@ -2,3 +2,8 @@
 __pycache__
 venv/
 .env
+migrate_to_postgres.py
+fix_colleges_migration.py
+fix_colleges_v2.py
+test_region_endpoint.py
+verify_migration.py

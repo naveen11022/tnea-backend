@@ -33,14 +33,26 @@ def get_college(request: Request, db: Session = Depends(get_db_dep)):
     try:
         cache_key = "college_type"
         if redis_client:
-            cache_data = redis_client.get(cache_key)
-            if cache_data:
-                return json.loads(cache_data)
+            try:
+                cache_data = redis_client.get(cache_key)
+                if cache_data:
+                    return json.loads(cache_data)
+            except Exception as cache_error:
+                print(f"Cache error: {cache_error}")
+        
         college_type = db.query(Colleges.college_type).distinct().all()
-        result = [college[0] for college in college_type]
+        result = [college[0] for college in college_type if college[0] is not None]
+        result.sort()
+        
         if redis_client:
-            redis_client.setex(cache_key, 3600, json.dumps(result))
+            try:
+                redis_client.setex(cache_key, 3600, json.dumps(result))
+            except Exception as cache_error:
+                print(f"Cache set error: {cache_error}")
+        
         return result
     except Exception as e:
         print("Error:", e)
+        import traceback
+        traceback.print_exc()
         return {"error": str(e)}
