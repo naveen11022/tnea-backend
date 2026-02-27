@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi.middleware import SlowAPIMiddleware
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-
+from database.db_connection import Base, engine
 import uvicorn
 
 from api.district import router as district_router
@@ -12,13 +9,13 @@ from api.bran_year_info import router as get_db_details
 from api.region_cate_info import router as region_cate_info
 from api.fetch_data import router as fetch_data
 
-from rate_limit.rate_limiter import limiter
+# from rate_limit.rate_limiter import limiter
 
 app = FastAPI()
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(get_db_details)
 app.include_router(region_cate_info)
@@ -33,6 +30,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.on_event("startup")
+def startup():
+    print("⏳ Creating tables...")
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tables ready")
+
+
+@app.get("/")
+async def root():
+    return {"Hello": "Tnea Backend"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

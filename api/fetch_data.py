@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from models.models import Colleges
-from database.db_connection import get_db, CandidateAllotment as CA, Colleges as CLG, Branch as B
-from rate_limit.rate_limiter import limiter
+from database.db_connection import get_db_dep, CandidateAllotment as CA, Colleges as CLG, Branch as B
+# from rate_limit.rate_limiter import limiter
 
 router = APIRouter()
 
 
 @router.post("/fetch_data")
-@limiter.limit("5/minute")
-def fetch_data(request: Request, data: Colleges, db: Session = Depends(get_db)):
+# @limiter.limit("5/minute")
+def fetch_data(request: Request, data: Colleges, db: Session = Depends(get_db_dep)):
     query = db.query(
         CA.aggr_mark, CA.general_rank, CA.community_rank, CA.community,
         CA.college_code, CLG.college_name, B.branch_name,
