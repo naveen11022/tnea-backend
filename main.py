@@ -19,7 +19,7 @@ app = FastAPI()
 
 app.include_router(get_db_details)
 app.include_router(region_cate_info)
-app.include_router(fetch_data)
+app.include_router(fetch_data, prefix="/api")
 app.include_router(branch_category_router)
 app.include_router(district_router)
 
