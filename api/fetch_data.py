@@ -7,7 +7,7 @@ from database.db_connection import get_db_dep, CandidateAllotment as CA, College
 router = APIRouter()
 
 
-@router.post("api/fetch_data")
+@router.post("/api/fetch_data")
 # @limiter.limit("5/minute")
 def fetch_data(request: Request, data: Colleges, db: Session = Depends(get_db_dep)):
     query = db.query(
