@@ -25,7 +25,10 @@ app.include_router(district_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://tnea.onrender.com"],
+    allow_origins=[
+        "https://tnea.onrender.com",
+        "https://tnea.onrender.com/",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
