@@ -27,7 +27,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://tnea.onrender.com",
-        "https://tnea.onrender.com/",
+        "https://tnea-backend-o1ld.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
