@@ -46,11 +46,34 @@ def get_all_districts(db: Session):
 
 
 def get_branch_trends(db: Session, years, districts, college_types, branch_categories, top_n):
-    where, params = build_filter_parts(years, districts, college_types, branch_categories)
+    params = {}
+    base_conditions = []
+
+    if districts:
+        ph, p = build_in_clause(districts, "district")
+        base_conditions.append(f"c.location IN ({ph})")
+        params.update(p)
+    if college_types:
+        ph, p = build_in_clause(college_types, "ct")
+        base_conditions.append(f"c.college_type IN ({ph})")
+        params.update(p)
+    if branch_categories:
+        ph, p = build_in_clause(branch_categories, "bc")
+        base_conditions.append(f"b.category IN ({ph})")
+        params.update(p)
+
+    base_where = ("WHERE " + " AND ".join(base_conditions)) if base_conditions else ""
     params["top_n"] = top_n
+
+    year_filter = ""
+    if years:
+        ph, p = build_in_clause(years, "year")
+        year_filter = f"WHERE year IN ({ph})"
+        params.update(p)
 
     sql = text(f"""
         WITH base AS (
+            -- Aggregate over ALL years so LAG has full history
             SELECT
                 ca.year,
                 ca.branch_code,
@@ -60,28 +83,32 @@ def get_branch_trends(db: Session, years, districts, college_types, branch_categ
             FROM candidate_allotment ca
             JOIN branch b ON ca.branch_code = b.branch_code
             JOIN colleges c ON ca.college_code::text = c.college_code::text
-            {where}
+            {base_where}
             GROUP BY ca.year, ca.branch_code, b.branch_name
         ),
-        ranked AS (
-            SELECT *,
-                RANK() OVER (PARTITION BY year ORDER BY demand_count DESC) AS rnk
-            FROM base
-        ),
-        top_ranked AS (
-            SELECT * FROM ranked WHERE rnk <= :top_n
-        ),
         with_growth AS (
+            -- Compute growth before any year filtering so LAG sees previous years
             SELECT *,
                 ROUND(
                     (demand_count - LAG(demand_count) OVER (PARTITION BY branch_code ORDER BY year))
                     / NULLIF(LAG(demand_count) OVER (PARTITION BY branch_code ORDER BY year), 0) * 100,
                     2
                 ) AS growth_pct
-            FROM top_ranked
+            FROM base
+        ),
+        filtered AS (
+            -- Now apply the requested year filter
+            SELECT * FROM with_growth
+            {year_filter}
+        ),
+        ranked AS (
+            SELECT *,
+                RANK() OVER (PARTITION BY year ORDER BY demand_count DESC) AS rnk
+            FROM filtered
         )
         SELECT year, branch_code, branch_name, demand_count, avg_cutoff, growth_pct, rnk
-        FROM with_growth
+        FROM ranked
+        WHERE rnk <= :top_n
         ORDER BY year ASC, demand_count DESC
     """)
 
@@ -147,8 +174,37 @@ def get_top_year_branches(db: Session, years, districts, college_types, branch_c
     where, params = build_filter_parts(years, districts, college_types, branch_categories)
     params["top_n"] = top_n
 
+    # Build a separate unfiltered-by-year WHERE clause so LAG can see all years
+    # for the YoY calculation, then we re-apply the year filter after ranking.
+    base_conditions = []
+    base_params = dict(params)
+
+    if districts:
+        ph, p = build_in_clause(districts, "district")
+        base_conditions.append(f"c.location IN ({ph})")
+        base_params.update(p)
+    if college_types:
+        ph, p = build_in_clause(college_types, "ct")
+        base_conditions.append(f"c.college_type IN ({ph})")
+        base_params.update(p)
+    if branch_categories:
+        ph, p = build_in_clause(branch_categories, "bc")
+        base_conditions.append(f"b.category IN ({ph})")
+        base_params.update(p)
+
+    base_where = ("WHERE " + " AND ".join(base_conditions)) if base_conditions else ""
+    params = base_params
+
+    # Year filter for the final result (after YoY is computed over all years)
+    year_filter = ""
+    if years:
+        ph, p = build_in_clause(years, "year")
+        year_filter = f"WHERE year IN ({ph})"
+        params.update(p)
+
     sql = text(f"""
         WITH base AS (
+            -- Aggregate over ALL years so LAG has full history
             SELECT
                 ca.year,
                 ca.branch_code,
@@ -158,28 +214,32 @@ def get_top_year_branches(db: Session, years, districts, college_types, branch_c
             FROM candidate_allotment ca
             JOIN branch b ON ca.branch_code = b.branch_code
             JOIN colleges c ON ca.college_code::text = c.college_code::text
-            {where}
+            {base_where}
             GROUP BY ca.year, ca.branch_code, b.branch_name
         ),
-        ranked AS (
-            SELECT *,
-                RANK() OVER (PARTITION BY year ORDER BY demand_count DESC) AS rank_in_year
-            FROM base
-        ),
-        top_ranked AS (
-            SELECT * FROM ranked WHERE rank_in_year <= :top_n
-        ),
         with_yoy AS (
+            -- Compute YoY before any year filtering so LAG sees previous years
             SELECT *,
                 ROUND(
                     (demand_count - LAG(demand_count) OVER (PARTITION BY branch_code ORDER BY year))
                     / NULLIF(LAG(demand_count) OVER (PARTITION BY branch_code ORDER BY year), 0) * 100,
                     2
                 ) AS yoy_growth
-            FROM top_ranked
+            FROM base
+        ),
+        filtered AS (
+            -- Now apply the requested year filter
+            SELECT * FROM with_yoy
+            {year_filter}
+        ),
+        ranked AS (
+            SELECT *,
+                RANK() OVER (PARTITION BY year ORDER BY demand_count DESC) AS rank_in_year
+            FROM filtered
         )
         SELECT year, branch_code, branch_name, demand_count, avg_cutoff, yoy_growth, rank_in_year
-        FROM with_yoy
+        FROM ranked
+        WHERE rank_in_year <= :top_n
         ORDER BY year DESC, rank_in_year ASC
     """)
 
