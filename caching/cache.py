@@ -1,15 +1,47 @@
 import os
+import logging
+import json
+from typing import Any, Optional
+from dotenv import load_dotenv
 import redis
 
-redis_url = os.getenv("REDIS_URL")
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+DEFAULT_TTL = int(os.getenv("CACHE_TTL", "3600"))
 
 try:
-    client = redis.from_url(
-        redis_url,
+    redis_client: Optional[redis.Redis] = redis.from_url(
+        REDIS_URL,
         decode_responses=True,
-        socket_connect_timeout=5
+        socket_connect_timeout=5,
+        socket_timeout=5,
+        retry_on_timeout=True,
     )
-    client.ping()
-    print("✅ Connected to Upstash Redis")
-except Exception as e:
-    print("❌ Redis connection error:", e)
+    redis_client.ping()
+    logger.info("Connected to Redis at %s", REDIS_URL)
+except Exception as exc:
+    logger.warning("Redis unavailable (%s). Caching disabled.", exc)
+    redis_client = None
+
+
+def cache_get(key: str) -> Optional[Any]:
+    if not redis_client:
+        return None
+    try:
+        raw = redis_client.get(key)
+        return json.loads(raw) if raw else None
+    except Exception as exc:
+        logger.warning("Cache GET error for key '%s': %s", key, exc)
+        return None
+
+
+def cache_set(key: str, value: Any, ttl: int = DEFAULT_TTL) -> None:
+    if not redis_client:
+        return
+    try:
+        redis_client.setex(key, ttl, json.dumps(value))
+    except Exception as exc:
+        logger.warning("Cache SET error for key '%s': %s", key, exc)
