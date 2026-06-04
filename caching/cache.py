@@ -45,3 +45,17 @@ def cache_set(key: str, value: Any, ttl: int = DEFAULT_TTL) -> None:
         redis_client.setex(key, ttl, json.dumps(value))
     except Exception as exc:
         logger.warning("Cache SET error for key '%s': %s", key, exc)
+
+
+def cache_clear_pattern(pattern: str) -> int:
+    """Delete all keys matching a pattern. Returns number of keys deleted."""
+    if not redis_client:
+        return 0
+    try:
+        keys = redis_client.keys(pattern)
+        if keys:
+            return redis_client.delete(*keys)
+        return 0
+    except Exception as exc:
+        logger.warning("Cache CLEAR error for pattern '%s': %s", pattern, exc)
+        return 0

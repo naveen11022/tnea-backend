@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database.db_connection import get_db_dep
 from rate_limit.rate_limiter import limiter
-from caching.cache import cache_get, cache_set
+from caching.cache import cache_get, cache_set, cache_clear_pattern
 from analytics.schemas import AnalyticsFilterRequest
 from analytics import queries
 import json
@@ -14,6 +14,14 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 
 def make_cache_key(prefix: str, obj) -> str:
     return f"analytics:{prefix}:{json.dumps(obj, sort_keys=True, default=str)}"
+
+
+@router.post("/cache/clear")
+@limiter.limit("5/minute")
+async def clear_analytics_cache(request: Request):
+    """Clear all analytics cache entries. Useful after data updates."""
+    deleted = cache_clear_pattern("analytics:*")
+    return {"cleared": deleted, "message": f"Cleared {deleted} cache entries"}
 
 
 @router.get("/districts")
