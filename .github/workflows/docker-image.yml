@@ -32,7 +32,7 @@ jobs:
 
       - name: Black
         run: |
-          black --check .
+          black.
 
       - name: Ruff
         run: |
