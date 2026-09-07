@@ -52,8 +52,8 @@ jobs:
         run: |
           docker build \
             --platform linux/amd64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/fastapi-cicd:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/fastapi-cicd:${{ github.sha }} \
+            -t "${{ secrets.DOCKER_USERNAME }}/fastapi-cicd:latest" \
+            -t "${{ secrets.DOCKER_USERNAME }}/fastapi-cicd:${{ github.sha }}" \
             .
 
       - name: Trivy Scan
